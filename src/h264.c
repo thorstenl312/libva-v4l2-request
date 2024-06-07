@@ -220,7 +220,7 @@ static void h264_va_picture_to_v4l2(struct request_data *driver_data,
 {
 	h264_fill_dpb(driver_data, context, decode);
 
-	decode->num_slices = surface->slices_count;
+	decode->frame_num = surface->slices_count;
 	decode->top_field_order_cnt = VAPicture->CurrPic.TopFieldOrderCnt;
 	decode->bottom_field_order_cnt = VAPicture->CurrPic.BottomFieldOrderCnt;
 
@@ -327,9 +327,9 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 				  struct object_context *context,
 				  VASliceParameterBufferH264 *VASlice,
 				  VAPictureParameterBufferH264 *VAPicture,
-				  struct v4l2_ctrl_h264_slice_params *slice)
+				  struct v4l2_ctrl_h264_slice_params *slice,
+				  struct v4l2_h264_pred_weight_table *pred_table)
 {
-	slice->size = VASlice->slice_data_size;
 	slice->header_bit_size = VASlice->slice_data_bit_offset;
 	slice->first_mb_in_slice = VASlice->first_mb_in_slice;
 	slice->slice_type = VASlice->slice_type;
@@ -356,7 +356,7 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 			if (!entry)
 				continue;
 
-			slice->ref_pic_list0[i] = idx;
+			slice->ref_pic_list0[i]->idx = idx;
 		}
 	}
 
@@ -375,21 +375,21 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 			if (!entry)
 				continue;
 
-			slice->ref_pic_list1[i] = idx;
+			slice->ref_pic_list1[i]->idx = idx;
 		}
 	}
 
 	if (VASlice->direct_spatial_mv_pred_flag)
 		slice->flags |= V4L2_H264_SLICE_FLAG_DIRECT_SPATIAL_MV_PRED;
 
-	slice->pred_weight_table.chroma_log2_weight_denom =
+	pred_table.chroma_log2_weight_denom =
 		VASlice->chroma_log2_weight_denom;
-	slice->pred_weight_table.luma_log2_weight_denom =
+	pred_table.luma_log2_weight_denom =
 		VASlice->luma_log2_weight_denom;
 
 	if (((VASlice->slice_type % 5) == H264_SLICE_P) ||
 	    ((VASlice->slice_type % 5) == H264_SLICE_B))
-		h264_copy_pred_table(&slice->pred_weight_table.weight_factors[0],
+		h264_copy_pred_table(&pred_weight_table.weight_factors[0],
 				     slice->num_ref_idx_l0_active_minus1 + 1,
 				     VASlice->luma_weight_l0,
 				     VASlice->luma_offset_l0,
@@ -397,7 +397,7 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 				     VASlice->chroma_offset_l0);
 
 	if ((VASlice->slice_type % 5) == H264_SLICE_B)
-		h264_copy_pred_table(&slice->pred_weight_table.weight_factors[1],
+		h264_copy_pred_table(&pred_weight_table.weight_factors[1],
 				     slice->num_ref_idx_l1_active_minus1 + 1,
 				     VASlice->luma_weight_l1,
 				     VASlice->luma_offset_l1,
