@@ -356,7 +356,7 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 			if (!entry)
 				continue;
 
-			slice->ref_pic_list0[i]->idx = idx;
+			slice->ref_pic_list0[i]->index = idx;
 		}
 	}
 
@@ -375,21 +375,21 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 			if (!entry)
 				continue;
 
-			slice->ref_pic_list1[i]->idx = idx;
+			slice->ref_pic_list1[i]->index = idx;
 		}
 	}
 
 	if (VASlice->direct_spatial_mv_pred_flag)
 		slice->flags |= V4L2_H264_SLICE_FLAG_DIRECT_SPATIAL_MV_PRED;
 
-	pred_table.chroma_log2_weight_denom =
+	pred_table->chroma_log2_weight_denom =
 		VASlice->chroma_log2_weight_denom;
-	pred_table.luma_log2_weight_denom =
+	pred_table->luma_log2_weight_denom =
 		VASlice->luma_log2_weight_denom;
 
 	if (((VASlice->slice_type % 5) == H264_SLICE_P) ||
 	    ((VASlice->slice_type % 5) == H264_SLICE_B))
-		h264_copy_pred_table(&pred_weight_table.weight_factors[0],
+		h264_copy_pred_table(&pred_table.weight_factors[0],
 				     slice->num_ref_idx_l0_active_minus1 + 1,
 				     VASlice->luma_weight_l0,
 				     VASlice->luma_offset_l0,
@@ -397,7 +397,7 @@ static void h264_va_slice_to_v4l2(struct request_data *driver_data,
 				     VASlice->chroma_offset_l0);
 
 	if ((VASlice->slice_type % 5) == H264_SLICE_B)
-		h264_copy_pred_table(&pred_weight_table.weight_factors[1],
+		h264_copy_pred_table(&pred_table.weight_factors[1],
 				     slice->num_ref_idx_l1_active_minus1 + 1,
 				     VASlice->luma_weight_l1,
 				     VASlice->luma_offset_l1,
@@ -414,6 +414,7 @@ int h264_set_controls(struct request_data *driver_data,
 	struct v4l2_ctrl_h264_slice_params slice = { 0 };
 	struct v4l2_ctrl_h264_pps pps = { 0 };
 	struct v4l2_ctrl_h264_sps sps = { 0 };
+	struct v4l2_hevc_pred_weight_table pred_table = { 0 };
 	struct h264_dpb_entry *output;
 	int rc;
 
