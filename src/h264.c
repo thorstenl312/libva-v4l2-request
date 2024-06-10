@@ -434,7 +434,7 @@ int h264_set_controls(struct request_data *driver_data,
 			       &surface->params.h264.matrix, &matrix);
 	h264_va_slice_to_v4l2(driver_data, context,
 			      &surface->params.h264.slice,
-			      &surface->params.h264.picture, &slice);
+			      &surface->params.h264.picture, &slice, &pred_table);
 
 	rc = v4l2_set_control(driver_data->video_fd, surface->request_fd,
 			      V4L2_CID_MPEG_VIDEO_H264_DECODE_PARAMS, &decode,
