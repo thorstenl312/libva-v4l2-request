@@ -161,6 +161,7 @@ static VAStatus copy_surface_to_image (struct request_data *driver_data,
 			// 		image->pitches[i], image->width,
 			// 		i == 0 ? image->height :
 			// 			 image->height / 2);
+			int fakeTemp = 1;
 		else {
 			memcpy(buffer_object->data + image->offsets[i],
 			       surface_object->destination_data[i],
